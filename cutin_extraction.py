@@ -24,6 +24,7 @@ class rss_para:
 
 class ScenarioExtraction(rss_para):
     def __init__(self, dataset_path):
+        self.vy = None
         self.y = None
         self.tracks_meta = None
         self.obj_class = None
@@ -73,6 +74,7 @@ class ScenarioExtraction(rss_para):
             self.x = utils.get_label_inx(tracks_labels, 'x')
             self.y = utils.get_label_inx(tracks_labels, 'y')
             self.vx = utils.get_label_inx(tracks_labels, 'xVelocity')
+            self.vy = utils.get_label_inx(tracks_labels, 'yVelocity')
 
             # check is lane changing occurs
             for track_meta in self.tracks_meta:
@@ -90,14 +92,14 @@ class ScenarioExtraction(rss_para):
                         # some cases only cut-in vehicle is found, return length 1, recording lane changing
                         self.lanechange[self.folder_cutin_id] = cut_in_pairs
                         # recording only cut-in
-                        if len(cut_in_pairs) == 2:
+                        if len(cut_in_pairs) == 3:
                             self.car_pairs[self.folder_cutin_id] = cut_in_pairs
                             if is_overlap:
                                 self.overlap_car_pairs[self.folder_cutin_id] = cut_in_pairs
                             else:
                                 self.nonoverlap_car_pairs[self.folder_cutin_id] = cut_in_pairs
                     # car cuts in a noncar, or a noncar cuts in a car
-                    elif len(cut_in_pairs) == 2:
+                    elif len(cut_in_pairs) == 3:
                         self.noncar_pairs[self.folder_cutin_id] = cut_in_pairs
 
                     logger.info(self.folder_cutin_id)
@@ -151,6 +153,7 @@ class ScenarioExtraction(rss_para):
                 # some case lane chang exist, but no offset is within the threshold, e.g., DJI0001, vechid 130
                 if t3_inx is None:
                     continue
+
                 # determine t1 - lane changing starts
                 for inx in range(t3_inx, 0, -1):
                     offset_current = float(vech_track[inx][self.ego_offset])
@@ -218,6 +221,8 @@ class ScenarioExtraction(rss_para):
                         d_rss = self.d_long(abs(v_r), abs(v_f))
                         if d_x_t3 <= d_rss:
                             cut_in_pairs.append(vech_track[begin_inx:end_inx])
+                            # save the key timestamps
+                            cut_in_pairs.append([t1, t3, t5])
                             # check if overlap cut-in occurs
                             if d_x_t1 <= 0:
                                 is_overlap = True
