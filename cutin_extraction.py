@@ -213,18 +213,18 @@ class ScenarioExtraction(rss_para):
                         # check if cut-in or lane change by using rss
                         driving_direction = utils.driving_direction(self.vx, vech_track)
                         if driving_direction == -1:
-                            d_x_t1 = ego_x_t1 - cut_in_x_t1 - (ego_width + cut_in_width) / 2
+                            d_x_t1 = ego_x_t1 - cut_in_x_t1
                         elif driving_direction == 1:
-                            d_x_t1 = cut_in_x_t1 - ego_x_t1 - (ego_width + cut_in_width) / 2
+                            d_x_t1 = cut_in_x_t1 - ego_x_t1
                         # d_x_t1 = abs(cut_in_x_t1 - ego_x_t1) - (ego_width + cut_in_width) / 2
                         d_x_t3 = abs(cut_in_x_t3 - ego_x_t3) - (ego_width + cut_in_width) / 2
                         d_rss = self.d_long(abs(v_r), abs(v_f))
-                        if d_x_t3 <= d_rss:
+                        if d_x_t3 <= d_rss and d_x_t1 >= - (ego_width + cut_in_width) / 2:
                             cut_in_pairs.append(vech_track[begin_inx:end_inx])
                             # save the key timestamps
                             cut_in_pairs.append([t1, t3, t5])
                             # check if overlap cut-in occurs
-                            if d_x_t1 <= 0:
+                            if d_x_t1 <= (ego_width + cut_in_width) / 2:
                                 is_overlap = True
 
                 break
