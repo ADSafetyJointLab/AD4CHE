@@ -2,9 +2,8 @@ from cutin_extraction import ScenarioExtraction
 import utils
 from parameter_distributions import plot_kde
 import matplotlib.pyplot as plt
-from sklearn.neighbors import KernelDensity
+from scipy import stats
 import numpy as np
-
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -63,13 +62,15 @@ class BehaviorAnalysis:
             accx_t3_t5 = []
             inx_acc = []
 
+            cutin = car_pair[0]
             ego = car_pair[1]
             key_timestamps_t1 = int(car_pair[2][0])
             key_timestamps_t3 = int(car_pair[2][1])
             key_timestamps_t5 = int(car_pair[2][2])
-            # save dhw at T5,inx is -1 at the last one
+            # save dhw , v_ego and v_cutin at T5,inx is -1 at the last one
             dhw_t5 = self.get_dhw(car_pair, -1)
-            self.dhw[key] = dhw_t5
+            self.dhw[key] = [dhw_t5, float(ego[-1][self.vx]), float(cutin[-1][self.vx])]
+
             for inx, ego_data in enumerate(ego):
                 # should before t3, after that ego has no motivation to evade
                 if key_timestamps_t1 <= int(ego_data[self.frame]) <= key_timestamps_t3:
@@ -149,6 +150,7 @@ class BehaviorAnalysis:
         self.plot_offset()
         self.plot_offset_3D()
         self.plot_acc()
+        self.plot_dhw()
 
     def get_dhw(self, car_pair, inx_):
         ego = car_pair[1]
@@ -180,11 +182,13 @@ class BehaviorAnalysis:
                     break
 
             # for different speeds
+            vx = abs(float(ego[inx_][self.vx]))
+            vx0.append(vx)
             if t1 == 'lowSpeed':
-                if abs(float(ego[inx_][self.vx])) > 10:
+                if vx > 5:
                     continue
             elif t1 == 'highSpeed':
-                if abs(float(ego[inx_][self.vx])) <= 10:
+                if vx <= 5:
                     continue
 
             height = float(cutin_car[inx_][self.height]) / 2 + float(ego[inx_][self.height]) / 2
@@ -195,8 +199,6 @@ class BehaviorAnalysis:
 
             vy = abs(float(cutin_car[inx_][self.vy]))
             vy0.append(vy)
-            vx = abs(float(cutin_car[inx_][self.vx]))
-            vx0.append(vx)
 
             ittc_y.append(vy / rel_d_y)
 
@@ -214,15 +216,16 @@ class BehaviorAnalysis:
             ax[inx].scatter(ittc_y_changing, offset_changing, color='#C0ACA1')
             ax[inx].set_xlabel(r'Lateral inverse TTC [1/s]')
             ax[inx].legend(['Constant offset', 'Shifting offset'])
-            if offset:
-                coef = np.polyfit(ittc_y, offset, 1)
-                poly1d_const = np.poly1d(coef)
-                ax[inx].plot(ittc_y, poly1d_const(ittc_y), color='#FF8D57')
+            # plot linear regression
+            # if offset:
+            #     coef = np.polyfit(ittc_y, offset, 1)
+            #     poly1d_const = np.poly1d(coef)
+            #     ax[inx].plot(ittc_y, poly1d_const(ittc_y), color='#FF8D57')
+            # ax[inx].plot(ittc_y_changing, poly1d_changing(ittc_y_changing), color='#C0ACA1')
 
-            ax[inx].plot(ittc_y_changing, poly1d_changing(ittc_y_changing), color='#C0ACA1')
             ax[inx].grid(alpha=0.7)
-        ax[0].set_title(r'$v_{\rm ego}$ < 10 m/s')
-        ax[1].set_title(r'10 m/s < $v_{\rm ego}$ < 22 m/s')
+        ax[0].set_title(r'$v_{\rm ego}$ < 5 m/s')
+        ax[1].set_title(r'5 m/s < $v_{\rm ego}$ < 20 m/s')
 
         ax[0].set_ylabel(r'Lateral ego offset at $T_{1}$ [m]')
 
@@ -271,14 +274,25 @@ class BehaviorAnalysis:
         ax1.set_ylabel('Density')
         ax1.grid(alpha=0.7)
 
-        ax2.scatter(dhw, accx_negative,color='#FF8D57')
+        ax2.scatter(dhw, accx_negative, color='#FF8D57')
         ax2.set_xlabel(r'Dhw when reaching maximum deceleration [m]')
         ax2.set_ylabel('Maximum deceleration [m/$s^{2}$]')
         ax2.grid(alpha=0.7)
         plt.subplots_adjust(hspace=0.4)
 
     def plot_dhw(self):
-        dhw = self.dhw.values()
+        values_ = self.dhw.values()
+        dhw = [v[0] for v in values_]
+        v_ego = [v[1] for v in values_]
+        v_cutin = [v[2] for v in values_]
+
+        rel_v = []
+        for i in range(len(v_ego)):
+            if v_ego[i] < 0:
+                rel_v.append(v_ego[i] - v_cutin[i])
+            else:
+                rel_v.append(v_cutin[i] - v_ego[i])
+
         fig, ax = plt.subplots(1)
         n, bins, patches = plt.hist(dhw, bins=6, density=True, histtype='bar', rwidth=1.0,
                                     facecolor='#7A93B2', edgecolor='black')
@@ -286,6 +300,20 @@ class BehaviorAnalysis:
         ax.set_xlabel(r'Dhw at $T_{5}$ [m]')
         ax.set_ylabel('Density')
         ax.grid(alpha=0.7)
+
+        # plot rel_v vs dhw at the last timestamp
+        fig, ax = plt.subplots(1)
+        ax.scatter(rel_v, dhw, color='#FF8D57')
+        slope, intercept, r, p, std_err = stats.linregress(rel_v, dhw)
+        dhw_pred = []
+        for rel_v_ in rel_v:
+            dhw_pred.append(slope * rel_v_ + intercept)
+        ax.plot(rel_v, dhw_pred, color='#C0ACA1', label=f'R={r:.2f}')
+        ax.grid(alpha=0.7)
+        ax.set_xlabel(r' Relative longitudinal velocity [m/s]')
+        ax.set_ylabel(r' Dhw [m]')
+        ax.legend()
+
 
 def main():
     obj = utils.load_object("data.pickle")
