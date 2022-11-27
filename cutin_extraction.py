@@ -24,6 +24,7 @@ class rss_para:
 
 class ScenarioExtraction(rss_para):
     def __init__(self, dataset_path):
+        self.accx = None
         self.vy = None
         self.y = None
         self.tracks_meta = None
@@ -75,6 +76,7 @@ class ScenarioExtraction(rss_para):
             self.y = utils.get_label_inx(tracks_labels, 'y')
             self.vx = utils.get_label_inx(tracks_labels, 'xVelocity')
             self.vy = utils.get_label_inx(tracks_labels, 'yVelocity')
+            self.accx = utils.get_label_inx(tracks_labels, 'xAcceleration')
 
             # check is lane changing occurs
             for track_meta in self.tracks_meta:
