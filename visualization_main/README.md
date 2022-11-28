@@ -1,4 +1,4 @@
-## AD4CHE visualize (The visualizer is referenced from the HighD dataset)
+## AD4CHE Visualize (The visualizer is referenced from the HighD dataset)
 The python toolbox gives the opportunity to read in the AD4CHE csv files and visualize them in an interactive 
 plot. Through modularity, one can use the i/o functions directly for own usage. In the following, 
 each method is shortly described to maintain easy and correct usage.
