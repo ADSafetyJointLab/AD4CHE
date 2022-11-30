@@ -275,7 +275,7 @@ class BehaviorAnalysis:
         ax1.grid(alpha=0.7)
 
         ax2.scatter(dhw, accx_negative, color='#FF8D57')
-        ax2.set_xlabel(r'Dhw when reaching maximum deceleration [m]')
+        ax2.set_xlabel(r'DHW when reaching maximum deceleration [m]')
         ax2.set_ylabel('Maximum deceleration [m/$s^{2}$]')
         ax2.grid(alpha=0.7)
         plt.subplots_adjust(hspace=0.4)
@@ -310,8 +310,8 @@ class BehaviorAnalysis:
             dhw_pred.append(slope * rel_v_ + intercept)
         ax.plot(rel_v, dhw_pred, color='#C0ACA1', label=f'R={r:.2f}')
         ax.grid(alpha=0.7)
-        ax.set_xlabel(r' Relative longitudinal velocity [m/s]')
-        ax.set_ylabel(r' Dhw [m]')
+        ax.set_xlabel(r' Relative longitudinal velocity $v_{\rm rel,x}$ [m/s]')
+        ax.set_ylabel(r' DHW [m]')
         ax.legend()
 
 
