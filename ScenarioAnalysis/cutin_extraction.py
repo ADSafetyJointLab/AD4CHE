@@ -2,6 +2,7 @@
 import os
 import utils
 import logging
+import argparse
 
 lateral_offset = 0.375
 logger = logging.getLogger(__name__)
@@ -243,11 +244,12 @@ class ScenarioExtraction(rss_para):
 
 def main():
     utils.setup_logging()
-    # define the dataset path
-    dataset_path = '/home/cheng/work/AD4CHE_V1.0/AD4CHE_Data_V1.0'
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--dataset_path",default="/AD4CHE_V1.0/AD4CHE_Data_V1.0",type=str,help="Specify the storage path of AD4CHE dataset")
+    args = parser.parse_args()
     save_extracted_data = True
 
-    sce_extra = ScenarioExtraction(dataset_path)
+    sce_extra = ScenarioExtraction(args.dataset_path)
     sce_extra.read_data()
 
     # print information
